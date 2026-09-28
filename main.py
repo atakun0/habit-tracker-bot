@@ -7,6 +7,8 @@ from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 
+from db import init_db
+
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 
@@ -51,6 +53,7 @@ async def add_habit_name(message: Message, state: FSMContext):
     await state.clear()
 
 async def main():
+    init_db()
     print("Бот успешно запущен и готов к работе!")
     await dp.start_polling(bot)
 
