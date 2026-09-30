@@ -19,3 +19,12 @@ def add_habit(user_id: int, habit_name: str):
     cursor.execute('INSERT INTO habits (user_id, habit_name) VALUES (?, ?)', (user_id, habit_name))
     conn.commit()
     conn.close()
+
+def get_habits(user_id: int):
+    conn = sqlite3.connect('habits.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT habit_name FROM habits WHERE user_id = ?', (user_id,))
+    habits = cursor.fetchall()
+    conn.close()
+    
+    return [habit[0] for habit in habits]

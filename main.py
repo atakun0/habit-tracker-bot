@@ -7,7 +7,7 @@ from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 
-from db import init_db, add_habit
+from db import init_db, add_habit, get_habits
 
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
@@ -55,6 +55,21 @@ async def add_habit_name(message: Message, state: FSMContext):
     
     await message.answer(f"Супер! Привычка «{habit_name}» успешно добавлена и сохранена в базу!")
     await state.clear()
+
+@dp.message(F.text == "📋 Мои привычки")
+async def show_habits_handler(message: Message):
+    user_id = message.from_user.id
+    habits = get_habits(user_id)
+    
+    if not habits:
+        await message.answer("У тебя пока нет добавленных привычек. Нажми «➕ Добавить привычку», чтобы начать!")
+    else:
+        # Формируем красивый список
+        response = "Твои привычки:\n\n"
+        for i, habit in enumerate(habits, start=1):
+            response += f"{i}. {habit}\n"
+        
+        await message.answer(response)
 
 async def main():
     init_db()
