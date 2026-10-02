@@ -48,9 +48,19 @@ async def command_help_handler(message: Message):
 async def help_button_handler(message: Message):
     await message.answer("Раздел помощи.\nПока я умею только здороваться, но скоро научусь трекать твои привычки! Выбери нужное действие в меню.")
 
+@dp.message(Command("cancel"))
+@dp.message(F.text.lower() == "отмена")
+async def cancel_handler(message: Message, state: FSMContext):
+    current_state = await state.get_state()
+    if current_state is None:
+        return
+        
+    await state.clear()
+    await message.answer("Действие отменено. Можешь продолжать работу с меню.", reply_markup=main_kb)
+
 @dp.message(F.text == "➕ Добавить привычку")
 async def add_habit_start(message: Message, state: FSMContext):
-    await message.answer("Отлично! Напиши название новой привычки (например, 'Зарядка' или 'Чтение'):")
+    await message.answer("Отлично! Напиши название новой привычки (или напиши «отмена», если передумал):")
     await state.set_state(AddHabit.waiting_for_name)
 
 @dp.message(AddHabit.waiting_for_name)
