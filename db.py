@@ -28,3 +28,10 @@ def get_habits(user_id: int):
     conn.close()
     
     return [habit[0] for habit in habits]
+
+def delete_habit(user_id: int, habit_name: str):
+    conn = sqlite3.connect('habits.db')
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM habits WHERE user_id = ? AND habit_name = ?', (user_id, habit_name))
+    conn.commit()
+    conn.close()

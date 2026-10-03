@@ -8,7 +8,13 @@ from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 
-from db import init_db, add_habit, get_habits
+from db import init_db, add_habit, get_habits, delete_habit  # Добавили delete_habit
+
+class AddHabit(StatesGroup):
+    waiting_for_name = State()
+
+class DeleteHabit(StatesGroup):
+    waiting_for_habit_name = State()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -24,7 +30,7 @@ dp = Dispatcher()
 
 main_kb = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text="➕ Добавить привычку")],
+        [KeyboardButton(text="➕ Добавить привычку"), KeyboardButton(text="🗑 Удалить привычку")], # Новая кнопка
         [KeyboardButton(text="📋 Мои привычки"), KeyboardButton(text="❓ Помощь")]
     ],
     resize_keyboard=True
