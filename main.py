@@ -4,7 +4,7 @@ import logging
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, BotCommand
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 
@@ -94,9 +94,20 @@ async def show_habits_handler(message: Message):
         
         await message.answer(response)
 
+async def set_default_commands(bot: Bot):
+    commands = [
+        BotCommand(command="start", description="Главное меню"),
+        BotCommand(command="help", description="Справка по боту"),
+        BotCommand(command="cancel", description="Отменить текущее действие")
+    ]
+    await bot.set_my_commands(commands)
+
 async def main():
     init_db()
     logger.info("Бот успешно запущен и готов к работе!")
+    
+    await set_default_commands(bot)
+    
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
