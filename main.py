@@ -4,11 +4,12 @@ import logging
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, BotCommand
+from aiogram.types import Message, BotCommand
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 
-from db import init_db, add_habit, get_habits, delete_habit  # Добавили delete_habit
+from db import init_db, add_habit, get_habits, delete_habit
+from keyboards import main_kb
 
 class AddHabit(StatesGroup):
     waiting_for_name = State()
@@ -28,13 +29,6 @@ TOKEN = os.getenv("BOT_TOKEN")
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
-main_kb = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(text="➕ Добавить привычку"), KeyboardButton(text="🗑 Удалить привычку")], # Новая кнопка
-        [KeyboardButton(text="📋 Мои привычки"), KeyboardButton(text="❓ Помощь")]
-    ],
-    resize_keyboard=True
-)
 
 class AddHabit(StatesGroup):
     waiting_for_name = State()
