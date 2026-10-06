@@ -7,3 +7,10 @@ main_kb = ReplyKeyboardMarkup(
     ],
     resize_keyboard=True
 )
+
+cancel_kb = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="Отмена")]
+    ],
+    resize_keyboard=True
+)

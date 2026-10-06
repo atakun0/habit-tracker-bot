@@ -9,7 +9,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 
 from db import init_db, add_habit, get_habits, delete_habit
-from keyboards import main_kb
+from keyboards import main_kb, cancel_kb
 
 class AddHabit(StatesGroup):
     waiting_for_name = State()
@@ -56,11 +56,11 @@ async def cancel_handler(message: Message, state: FSMContext):
         return
         
     await state.clear()
-    await message.answer("Действие отменено. Можешь продолжать работу с меню.", reply_markup=main_kb)
+    await message.answer("Действие отменено. Можешь продолжать работу с меню.", reply_markup=main_kb) # Убедись, что тут есть main_kb
 
 @dp.message(F.text == "➕ Добавить привычку")
 async def add_habit_start(message: Message, state: FSMContext):
-    await message.answer("Отлично! Напиши название новой привычки (или напиши «отмена», если передумал):")
+    await message.answer("Отлично! Напиши название новой привычки:", reply_markup=cancel_kb)
     await state.set_state(AddHabit.waiting_for_name)
 
 @dp.message(AddHabit.waiting_for_name)
@@ -70,8 +70,7 @@ async def add_habit_name(message: Message, state: FSMContext):
     
     add_habit(user_id, habit_name)
     
-    await message.answer(f"Супер! Привычка «{habit_name}» успешно добавлена и сохранена в базу!")
-    await state.clear()
+    await message.answer(f"Супер! Привычка «{habit_name}» успешно добавлена и сохранена в базу!", reply_markup=main_kb)
 
 @dp.message(F.text == "📋 Мои привычки")
 async def show_habits_handler(message: Message):
