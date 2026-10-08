@@ -8,8 +8,11 @@ from aiogram.types import Message, BotCommand
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 
-from db import init_db, add_habit, get_habits, delete_habit
+from db import init_db, add_habit, get_habits, delete_habit, log_habit
 from keyboards import main_kb, cancel_kb
+
+class LogHabit(StatesGroup):
+    waiting_for_habit_name = State()
 
 class AddHabit(StatesGroup):
     waiting_for_name = State()
@@ -94,6 +97,37 @@ async def set_default_commands(bot: Bot):
         BotCommand(command="cancel", description="Отменить текущее действие")
     ]
     await bot.set_my_commands(commands)
+
+@dp.message(F.text == "✅ Отметить выполнение")
+async def log_habit_start(message: Message, state: FSMContext):
+    user_id = message.from_user.id
+    habits = get_habits(user_id)
+    
+    if not habits:
+        await message.answer("У тебя пока нет добавленных привычек. Сначала добавь их!")
+        return
+        
+    habits_list = "\n".join([f"- {h}" for h in habits])
+    await message.answer(
+        f"Твои привычки:\n{habits_list}\n\nКакую привычку ты сегодня выполнил? Напиши точное название:", 
+        reply_markup=cancel_kb
+    )
+    await state.set_state(LogHabit.waiting_for_habit_name)
+
+@dp.message(LogHabit.waiting_for_habit_name)
+async def log_habit_name(message: Message, state: FSMContext):
+    habit_name = message.text
+    user_id = message.from_user.id
+    
+    habits = get_habits(user_id)
+    if habit_name not in habits:
+        await message.answer("Такой привычки нет в твоем списке. Напиши точное название или нажми «Отмена».")
+        return
+        
+    log_habit(user_id, habit_name)
+    
+    await message.answer(f"Отлично! Выполнение привычки «{habit_name}» записано на сегодня ✅", reply_markup=main_kb)
+    await state.clear()
 
 async def main():
     init_db()
