@@ -8,7 +8,7 @@ from aiogram.types import Message, BotCommand
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 
-from db import init_db, add_habit, get_habits, delete_habit, log_habit
+from db import init_db, add_habit, get_habits, delete_habit, log_habit, get_habit_stats
 from keyboards import main_kb, cancel_kb
 
 class LogHabit(StatesGroup):
@@ -74,6 +74,21 @@ async def add_habit_name(message: Message, state: FSMContext):
     add_habit(user_id, habit_name)
     
     await message.answer(f"Супер! Привычка «{habit_name}» успешно добавлена и сохранена в базу!", reply_markup=main_kb)
+
+@dp.message(F.text == "📊 Статистика")
+async def show_statistics_handler(message: Message):
+    user_id = message.from_user.id
+    stats = get_habit_stats(user_id)
+    
+    if not stats:
+        await message.answer("У тебя пока нет отметок о выполнении привычек. Сделай хотя бы одну!")
+        return
+        
+    response = "📊 Твоя статистика выполнений:\n\n"
+    for habit_name, count in stats:
+        response += f"🔹 {habit_name}: {count} раз(а)\n"
+        
+    await message.answer(response)
 
 @dp.message(F.text == "📋 Мои привычки")
 async def show_habits_handler(message: Message):

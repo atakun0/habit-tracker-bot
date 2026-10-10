@@ -56,3 +56,18 @@ def log_habit(user_id: int, habit_name: str):
     cursor.execute('INSERT INTO habit_logs (user_id, habit_name, date) VALUES (?, ?, ?)', (user_id, habit_name, today))
     conn.commit()
     conn.close()
+
+def get_habit_stats(user_id: int):
+    conn = sqlite3.connect('habits.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT habit_name, COUNT(date) 
+        FROM habit_logs 
+        WHERE user_id = ? 
+        GROUP BY habit_name
+    ''', (user_id,))
+    
+    stats = cursor.fetchall() 
+    conn.close()
+    
+    return stats
