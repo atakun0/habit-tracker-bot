@@ -9,7 +9,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 
 from db import init_db, add_habit, get_habits, delete_habit, log_habit, get_habit_stats
-from keyboards import main_kb, cancel_kb
+from keyboards import main_kb, cancel_kb, habits_kb
 
 class LogHabit(StatesGroup):
     waiting_for_habit_name = State()
@@ -105,6 +105,36 @@ async def show_habits_handler(message: Message):
         
         await message.answer(response)
 
+@dp.message(F.text == "🗑 Удалить привычку")
+async def delete_habit_start(message: Message, state: FSMContext):
+    user_id = message.from_user.id
+    habits = get_habits(user_id)
+    
+    if not habits:
+        await message.answer("У тебя пока нет привычек, нечего удалять!")
+        return
+        
+    await message.answer(
+        "Выбери привычку, которую хочешь удалить, на клавиатуре ниже:",
+        reply_markup=habits_kb(habits)
+    )
+    await state.set_state(DeleteHabit.waiting_for_habit_name)
+
+@dp.message(DeleteHabit.waiting_for_habit_name)
+async def delete_habit_name(message: Message, state: FSMContext):
+    habit_name = message.text
+    user_id = message.from_user.id
+    
+    habits = get_habits(user_id)
+    if habit_name not in habits:
+        await message.answer("Такой привычки нет в твоем списке. Выбери из меню или нажми «Отмена».")
+        return
+        
+    delete_habit(user_id, habit_name)
+    await message.answer(f"Привычка «{habit_name}» успешно удалена 🗑", reply_markup=main_kb)
+    await state.clear()
+
+
 async def set_default_commands(bot: Bot):
     commands = [
         BotCommand(command="start", description="Главное меню"),
@@ -122,10 +152,9 @@ async def log_habit_start(message: Message, state: FSMContext):
         await message.answer("У тебя пока нет добавленных привычек. Сначала добавь их!")
         return
         
-    habits_list = "\n".join([f"- {h}" for h in habits])
     await message.answer(
-        f"Твои привычки:\n{habits_list}\n\nКакую привычку ты сегодня выполнил? Напиши точное название:", 
-        reply_markup=cancel_kb
+        "Какую привычку ты сегодня выполнил? Выбери из списка на клавиатуре:", 
+        reply_markup=habits_kb(habits)
     )
     await state.set_state(LogHabit.waiting_for_habit_name)
 

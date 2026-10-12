@@ -16,3 +16,8 @@ cancel_kb = ReplyKeyboardMarkup(
     ],
     resize_keyboard=True
 )
+
+def habits_kb(habits_list: list[str]):
+    buttons = [[KeyboardButton(text=habit)] for habit in habits_list]
+    buttons.append([KeyboardButton(text="Отмена")])
+    return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
