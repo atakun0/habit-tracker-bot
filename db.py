@@ -71,3 +71,19 @@ def get_habit_stats(user_id: int):
     conn.close()
     
     return stats
+
+def check_habit_logged_today(user_id: int, habit_name: str) -> bool:
+    conn = sqlite3.connect('habits.db')
+    cursor = conn.cursor()
+    
+    today = datetime.date.today().isoformat()
+    
+    cursor.execute('''
+        SELECT 1 FROM habit_logs 
+        WHERE user_id = ? AND habit_name = ? AND date = ?
+    ''', (user_id, habit_name, today))
+    
+    result = cursor.fetchone()
+    conn.close()
+    
+    return bool(result)

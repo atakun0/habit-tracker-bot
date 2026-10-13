@@ -7,8 +7,9 @@ from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, BotCommand
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
+from aiogram.client.session.aiohttp import AiohttpSession
 
-from db import init_db, add_habit, get_habits, delete_habit, log_habit, get_habit_stats
+from db import init_db, add_habit, get_habits, delete_habit, log_habit, get_habit_stats, check_habit_logged_today
 from keyboards import main_kb, cancel_kb, habits_kb
 
 class LogHabit(StatesGroup):
@@ -28,8 +29,11 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
+PROXY_URL = os.getenv("PROXY_URL")
 
-bot = Bot(token=TOKEN)
+session = AiohttpSession(proxy=PROXY_URL)
+bot = Bot(token=TOKEN, session=session)
+
 dp = Dispatcher()
 
 
@@ -165,11 +169,18 @@ async def log_habit_name(message: Message, state: FSMContext):
     
     habits = get_habits(user_id)
     if habit_name not in habits:
-        await message.answer("Такой привычки нет в твоем списке. Напиши точное название или нажми «Отмена».")
+        await message.answer("Такой привычки нет в твоем списке. Выбери из меню или нажми «Отмена».")
+        return
+        
+    if check_habit_logged_today(user_id, habit_name):
+        await message.answer(
+            f"Ты уже отмечал привычку «{habit_name}» сегодня! Возвращайся завтра 😉", 
+            reply_markup=main_kb
+        )
+        await state.clear()
         return
         
     log_habit(user_id, habit_name)
-    
     await message.answer(f"Отлично! Выполнение привычки «{habit_name}» записано на сегодня ✅", reply_markup=main_kb)
     await state.clear()
 
