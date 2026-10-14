@@ -65,6 +65,21 @@ async def cancel_handler(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("Действие отменено. Можешь продолжать работу с меню.", reply_markup=main_kb) # Убедись, что тут есть main_kb
 
+@dp.message(F.text == "❓ Помощь")
+@dp.message(Command("help"))
+async def help_handler(message: Message):
+    help_text = (
+        "🤖 <b>Как пользоваться трекером:</b>\n\n"
+        "➕ <b>Добавить привычку</b> — создать новую привычку для отслеживания.\n"
+        "✅ <b>Отметить выполнение</b> — записать прогресс на сегодня (защита от повторов включена!).\n"
+        "📋 <b>Мои привычки</b> — посмотреть весь список твоих целей.\n"
+        "📊 <b>Статистика</b> — узнать, сколько раз была выполнена каждая привычка.\n"
+        "🗑 <b>Удалить привычку</b> — убрать неактуальную цель.\n\n"
+        "<i>💡 Если бот ждет от тебя ввода, а ты передумал — просто нажми кнопку «Отмена» или напиши команду /cancel.</i>"
+    )
+    
+    await message.answer(help_text, parse_mode="HTML")
+
 @dp.message(F.text == "➕ Добавить привычку")
 async def add_habit_start(message: Message, state: FSMContext):
     await message.answer("Отлично! Напиши название новой привычки:", reply_markup=cancel_kb)
