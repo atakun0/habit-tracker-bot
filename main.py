@@ -3,6 +3,8 @@ import asyncio
 import logging
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, F
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, BotCommand
 from aiogram.fsm.state import State, StatesGroup
@@ -32,7 +34,11 @@ TOKEN = os.getenv("BOT_TOKEN")
 PROXY_URL = os.getenv("PROXY_URL")
 
 session = AiohttpSession(proxy=PROXY_URL)
-bot = Bot(token=TOKEN, session=session)
+bot = Bot(
+    token=TOKEN, 
+    session=session, 
+    default=DefaultBotProperties(parse_mode=ParseMode.HTML)
+)
 
 dp = Dispatcher()
 
@@ -51,9 +57,6 @@ async def command_start_handler(message: Message):
 async def command_help_handler(message: Message):
     await message.answer("Мои команды:\n/start - Перезапуск\n/help - Справка")
 
-@dp.message(F.text == "❓ Помощь")
-async def help_button_handler(message: Message):
-    await message.answer("Раздел помощи.\nПока я умею только здороваться, но скоро научусь трекать твои привычки! Выбери нужное действие в меню.")
 
 @dp.message(Command("cancel"))
 @dp.message(F.text.lower() == "отмена")
@@ -78,7 +81,7 @@ async def help_handler(message: Message):
         "<i>💡 Если бот ждет от тебя ввода, а ты передумал — просто нажми кнопку «Отмена» или напиши команду /cancel.</i>"
     )
     
-    await message.answer(help_text, parse_mode="HTML")
+    await message.answer(help_text)
 
 @dp.message(F.text == "➕ Добавить привычку")
 async def add_habit_start(message: Message, state: FSMContext):
