@@ -119,13 +119,16 @@ async def show_habits_handler(message: Message):
     
     if not habits:
         await message.answer("У тебя пока нет добавленных привычек. Нажми «➕ Добавить привычку», чтобы начать!")
-    else:
-        # Формируем красивый список
-        response = "Твои привычки:\n\n"
-        for i, habit in enumerate(habits, start=1):
-            response += f"{i}. {habit}\n"
+        return
         
-        await message.answer(response)
+    response = "Твои привычки и статус на сегодня:\n\n"
+    for i, habit in enumerate(habits, start=1):
+        is_done = check_habit_logged_today(user_id, habit)
+        status_emoji = "✅" if is_done else "❌"
+        
+        response += f"{i}. {habit} {status_emoji}\n"
+        
+    await message.answer(response)
 
 @dp.message(F.text == "🗑 Удалить привычку")
 async def delete_habit_start(message: Message, state: FSMContext):
