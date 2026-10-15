@@ -2,6 +2,7 @@ import os
 import asyncio
 import logging
 from dotenv import load_dotenv
+from middlewares import AntiSpamMiddleware
 from aiogram import Bot, Dispatcher, F
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -41,6 +42,7 @@ bot = Bot(
 )
 
 dp = Dispatcher()
+dp.message.middleware(AntiSpamMiddleware(limit_seconds=0.5))
 
 
 class AddHabit(StatesGroup):
