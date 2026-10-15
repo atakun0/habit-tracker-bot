@@ -47,7 +47,8 @@ class AddHabit(StatesGroup):
     waiting_for_name = State()
 
 @dp.message(CommandStart())
-async def command_start_handler(message: Message):
+async def command_start_handler(message: Message, state: FSMContext):
+    await state.clear() 
     await message.answer(
         "Привет! Я твой трекер привычек. Выбери действие ниже 👇",
         reply_markup=main_kb
@@ -96,6 +97,7 @@ async def add_habit_name(message: Message, state: FSMContext):
     add_habit(user_id, habit_name)
     
     await message.answer(f"Супер! Привычка «{habit_name}» успешно добавлена и сохранена в базу!", reply_markup=main_kb)
+    await state.clear()
 
 @dp.message(F.text == "📊 Статистика")
 async def show_statistics_handler(message: Message):
