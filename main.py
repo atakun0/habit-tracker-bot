@@ -11,8 +11,9 @@ from aiogram.types import Message, BotCommand
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from aiogram.client.session.aiohttp import AiohttpSession
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from db import init_db, add_habit, get_habits, delete_habit, log_habit, get_habit_stats, check_habit_logged_today, get_habit_streak
+from db import init_db, add_habit, get_habits, delete_habit, log_habit, get_habit_stats, check_habit_logged_today, get_habit_streak, get_all_users
 from keyboards import main_kb, cancel_kb, habits_kb
 
 class LogHabit(StatesGroup):
@@ -211,11 +212,31 @@ async def log_habit_name(message: Message, state: FSMContext):
     await message.answer(f"Отлично! Выполнение привычки «{habit_name}» записано на сегодня ✅", reply_markup=main_kb)
     await state.clear()
 
+async def send_daily_reminders():
+    users = get_all_users()
+    for user_id in users:
+        habits = get_habits(user_id)
+        if not habits:
+            continue
+            
+        pending = [h for h in habits if not check_habit_logged_today(user_id, h)]
+        
+        if pending:
+            await bot.send_message(
+                user_id, 
+                "Эй! Ты еще не выполнил все свои привычки на сегодня. Самое время это исправить! 👇",
+                reply_markup=main_kb
+            )
+
 async def main():
     init_db()
     logger.info("Бот успешно запущен и готов к работе!")
     
     await set_default_commands(bot)
+    
+    scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
+    scheduler.add_job(send_daily_reminders, trigger='cron', hour=20, minute=0)
+    scheduler.start()
     
     await dp.start_polling(bot)
 

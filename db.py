@@ -122,3 +122,11 @@ def get_habit_streak(user_id: int, habit_name: str) -> int:
             break
 
     return streak
+
+def get_all_users() -> list[int]:
+    conn = sqlite3.connect('habits.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT DISTINCT user_id FROM habits')
+    users = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    return users
