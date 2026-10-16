@@ -87,3 +87,38 @@ def check_habit_logged_today(user_id: int, habit_name: str) -> bool:
     conn.close()
     
     return bool(result)
+
+def get_habit_streak(user_id: int, habit_name: str) -> int:
+    conn = sqlite3.connect('habits.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        SELECT date FROM habit_logs 
+        WHERE user_id = ? AND habit_name = ? 
+        ORDER BY date DESC
+    ''', (user_id, habit_name))
+    
+    rows = cursor.fetchall()
+    conn.close()
+
+    if not rows:
+        return 0
+
+    dates = sorted(list(set([datetime.date.fromisoformat(row[0]) for row in rows])), reverse=True)
+
+    streak = 0
+    today = datetime.date.today()
+    yesterday = today - datetime.timedelta(days=1)
+
+    if dates[0] not in (today, yesterday):
+        return 0
+
+    check_date = dates[0]
+    for d in dates:
+        if d == check_date:
+            streak += 1
+            check_date -= datetime.timedelta(days=1)
+        else:
+            break
+
+    return streak

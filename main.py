@@ -12,7 +12,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from aiogram.client.session.aiohttp import AiohttpSession
 
-from db import init_db, add_habit, get_habits, delete_habit, log_habit, get_habit_stats, check_habit_logged_today
+from db import init_db, add_habit, get_habits, delete_habit, log_habit, get_habit_stats, check_habit_logged_today, get_habit_streak
 from keyboards import main_kb, cancel_kb, habits_kb
 
 class LogHabit(StatesGroup):
@@ -110,9 +110,11 @@ async def show_statistics_handler(message: Message):
         await message.answer("У тебя пока нет отметок о выполнении привычек. Сделай хотя бы одну!")
         return
         
-    response = "📊 Твоя статистика выполнений:\n\n"
+    response = "📊 <b>Твоя статистика выполнений:</b>\n\n"
     for habit_name, count in stats:
-        response += f"🔹 {habit_name}: {count} раз(а)\n"
+        streak = get_habit_streak(user_id, habit_name)
+        streak_text = f" (🔥 {streak} дней подряд)" if streak > 1 else ""
+        response += f"🔹 <b>{habit_name}</b>: {count} раз(а){streak_text}\n"
         
     await message.answer(response)
 
