@@ -13,7 +13,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.client.session.aiohttp import AiohttpSession
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from db import init_db, add_habit, get_habits, delete_habit, log_habit, get_habit_stats, check_habit_logged_today, get_habit_streak, get_all_users
+from db import init_db, add_habit, get_habits, delete_habit, log_habit, get_habit_stats, check_habit_logged_today, get_habit_streak, get_all_users, rename_habit
 from keyboards import main_kb, cancel_kb, habits_kb
 
 class LogHabit(StatesGroup):
@@ -21,6 +21,10 @@ class LogHabit(StatesGroup):
 
 class AddHabit(StatesGroup):
     waiting_for_name = State()
+
+class EditHabit(StatesGroup):
+    waiting_for_old_name = State()
+    waiting_for_new_name = State()
 
 class DeleteHabit(StatesGroup):
     waiting_for_habit_name = State()
@@ -71,6 +75,50 @@ async def cancel_handler(message: Message, state: FSMContext):
         
     await state.clear()
     await message.answer("Действие отменено. Можешь продолжать работу с меню.", reply_markup=main_kb) # Убедись, что тут есть main_kb
+
+@dp.message(F.text == "✏️ Изменить")
+async def edit_habit_start(message: Message, state: FSMContext):
+    user_id = message.from_user.id
+    habits = get_habits(user_id)
+    
+    if not habits:
+        await message.answer("У тебя пока нет привычек для изменения.")
+        return
+        
+    await message.answer(
+        "Какую привычку хочешь переименовать?",
+        reply_markup=habits_kb(habits)
+    )
+    await state.set_state(EditHabit.waiting_for_old_name)
+
+@dp.message(EditHabit.waiting_for_old_name)
+async def edit_habit_old_name(message: Message, state: FSMContext):
+    habit_name = message.text
+    user_id = message.from_user.id
+    
+    if habit_name not in get_habits(user_id):
+        await message.answer("Такой привычки нет. Выбери из меню или нажми «Отмена».")
+        return
+        
+    await state.update_data(old_name=habit_name)
+    await message.answer("Введи новое название для этой привычки:", reply_markup=cancel_kb)
+    await state.set_state(EditHabit.waiting_for_new_name)
+
+@dp.message(EditHabit.waiting_for_new_name)
+async def edit_habit_new_name(message: Message, state: FSMContext):
+    new_name = message.text
+    user_id = message.from_user.id
+    
+    data = await state.get_data()
+    old_name = data['old_name']
+    
+    rename_habit(user_id, old_name, new_name)
+    
+    await message.answer(
+        f"Готово! Привычка «{old_name}» переименована в «{new_name}».", 
+        reply_markup=main_kb
+    )
+    await state.clear()
 
 @dp.message(F.text == "❓ Помощь")
 @dp.message(Command("help"))

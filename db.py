@@ -130,3 +130,20 @@ def get_all_users() -> list[int]:
     users = [row[0] for row in cursor.fetchall()]
     conn.close()
     return users
+
+def rename_habit(user_id: int, old_name: str, new_name: str):
+    conn = sqlite3.connect('habits.db')
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        UPDATE habits SET habit_name = ? 
+        WHERE user_id = ? AND habit_name = ?
+    ''', (new_name, user_id, old_name))
+    
+    cursor.execute('''
+        UPDATE habit_logs SET habit_name = ? 
+        WHERE user_id = ? AND habit_name = ?
+    ''', (new_name, user_id, old_name))
+    
+    conn.commit()
+    conn.close()
