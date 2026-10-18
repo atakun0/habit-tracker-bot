@@ -1,6 +1,7 @@
 import os
 import asyncio
 import logging
+import random
 from dotenv import load_dotenv
 from middlewares import AntiSpamMiddleware
 from aiogram import Bot, Dispatcher, F
@@ -257,7 +258,19 @@ async def log_habit_name(message: Message, state: FSMContext):
         return
         
     log_habit(user_id, habit_name)
-    await message.answer(f"Отлично! Выполнение привычки «{habit_name}» записано на сегодня ✅", reply_markup=main_kb)
+    phrases = [
+        "Так держать! Продолжай в том же духе 🔥",
+        "Маленькие шаги ведут к большим результатам 🚀",
+        "Горжусь тобой! Одна галочка — один шаг к цели 🎯",
+        "Отличная работа! Не сбавляй темп 💪",
+        "Твоя дисциплина восхищает! ✨"
+    ]
+    motivation = random.choice(phrases)
+    
+    await message.answer(
+        f"✅ Привычка «<b>{habit_name}</b>» выполнена!\n\n<i>{motivation}</i>", 
+        reply_markup=main_kb
+    )
     await state.clear()
 
 async def send_daily_reminders():
