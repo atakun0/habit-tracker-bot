@@ -9,7 +9,7 @@ from middlewares import AntiSpamMiddleware
 from aiogram import Bot, Dispatcher, F
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.filters import CommandStart, Command
+from aiogram.filters import CommandStart, Command, StateFilter
 from aiogram.types import Message, BotCommand
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
@@ -79,7 +79,7 @@ async def cancel_handler(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("Действие отменено. Можешь продолжать работу с меню.", reply_markup=main_kb) # Убедись, что тут есть main_kb
 
-@dp.message(F.text == "✏️ Изменить")
+@dp.message(StateFilter(None), F.text == "✏️ Изменить")
 async def edit_habit_start(message: Message, state: FSMContext):
     user_id = message.from_user.id
     habits = get_habits(user_id)
@@ -123,7 +123,7 @@ async def edit_habit_new_name(message: Message, state: FSMContext):
     )
     await state.clear()
 
-@dp.message(F.text == "❓ Помощь")
+@dp.message(StateFilter(None), F.text == "❓ Помощь")
 @dp.message(Command("help"))
 async def help_handler(message: Message):
     help_text = (
@@ -138,7 +138,7 @@ async def help_handler(message: Message):
     
     await message.answer(help_text)
 
-@dp.message(F.text == "➕ Добавить привычку")
+@dp.message(StateFilter(None), F.text == "➕ Добавить привычку")
 async def add_habit_start(message: Message, state: FSMContext):
     await message.answer("Отлично! Напиши название новой привычки:", reply_markup=cancel_kb)
     await state.set_state(AddHabit.waiting_for_name)
@@ -153,7 +153,7 @@ async def add_habit_name(message: Message, state: FSMContext):
     await message.answer(f"Супер! Привычка «{habit_name}» успешно добавлена и сохранена в базу!", reply_markup=main_kb)
     await state.clear()
 
-@dp.message(F.text == "📊 Статистика")
+@dp.message(StateFilter(None), F.text == "📊 Статистика")
 async def show_statistics_handler(message: Message):
     user_id = message.from_user.id
     stats = get_habit_stats(user_id)
@@ -170,7 +170,7 @@ async def show_statistics_handler(message: Message):
         
     await message.answer(response)
 
-@dp.message(F.text == "📋 Мои привычки")
+@dp.message(StateFilter(None), F.text == "📋 Мои привычки")
 async def show_habits_handler(message: Message):
     user_id = message.from_user.id
     habits = get_habits(user_id)
@@ -188,7 +188,7 @@ async def show_habits_handler(message: Message):
         
     await message.answer(response)
 
-@dp.message(F.text == "🗑 Удалить привычку")
+@dp.message(StateFilter(None), F.text == "🗑 Удалить привычку")
 async def delete_habit_start(message: Message, state: FSMContext):
     user_id = message.from_user.id
     habits = get_habits(user_id)
@@ -226,7 +226,7 @@ async def set_default_commands(bot: Bot):
     ]
     await bot.set_my_commands(commands)
 
-@dp.message(F.text == "✅ Отметить выполнение")
+@dp.message(StateFilter(None), F.text == "✅ Отметить выполнение")
 async def log_habit_start(message: Message, state: FSMContext):
     user_id = message.from_user.id
     habits = get_habits(user_id)
@@ -291,7 +291,7 @@ async def send_daily_reminders():
                 reply_markup=main_kb
             )
 
-@dp.message(F.text == "📁 Экспорт данных")
+@dp.message(StateFilter(None), F.text == "📁 Экспорт данных")
 async def export_data_handler(message: Message):
     user_id = message.from_user.id
     logs = get_all_logs(user_id)
