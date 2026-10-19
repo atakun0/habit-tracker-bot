@@ -147,3 +147,16 @@ def rename_habit(user_id: int, old_name: str, new_name: str):
     
     conn.commit()
     conn.close()
+
+def get_all_logs(user_id: int) -> list[tuple]:
+    conn = sqlite3.connect('habits.db')
+    cursor = conn.cursor()
+    # Забираем название привычки и дату, сортируем от новых к старым
+    cursor.execute('''
+        SELECT habit_name, date FROM habit_logs 
+        WHERE user_id = ? 
+        ORDER BY date DESC
+    ''', (user_id,))
+    rows = cursor.fetchall()
+    conn.close()
+    return rows

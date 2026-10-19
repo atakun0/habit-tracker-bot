@@ -1,4 +1,6 @@
+import csv
 import os
+from aiogram.types import FSInputFile
 import asyncio
 import logging
 import random
@@ -14,7 +16,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.client.session.aiohttp import AiohttpSession
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-from db import init_db, add_habit, get_habits, delete_habit, log_habit, get_habit_stats, check_habit_logged_today, get_habit_streak, get_all_users, rename_habit
+from db import init_db, add_habit, get_habits, delete_habit, log_habit, get_habit_stats, check_habit_logged_today, get_habit_streak, get_all_users, rename_habit, get_all_logs
 from keyboards import main_kb, cancel_kb, habits_kb
 
 class LogHabit(StatesGroup):
@@ -288,6 +290,27 @@ async def send_daily_reminders():
                 "Эй! Ты еще не выполнил все свои привычки на сегодня. Самое время это исправить! 👇",
                 reply_markup=main_kb
             )
+
+@dp.message(F.text == "📁 Экспорт данных")
+async def export_data_handler(message: Message):
+    user_id = message.from_user.id
+    logs = get_all_logs(user_id)
+    
+    if not logs:
+        await message.answer("У тебя пока нет истории выполнений для экспорта. Отметь хотя бы одну привычку!")
+        return
+        
+    filename = f"habits_export_{user_id}.csv"
+    with open(filename, mode='w', newline='', encoding='utf-8-sig') as file:
+        writer = csv.writer(file, delimiter=';')
+        writer.writerow(["Привычка", "Дата выполнения"]) # Заголовки столбцов
+        for row in logs:
+            writer.writerow(row)
+            
+    document = FSInputFile(filename)
+    await message.answer_document(document, caption="Твои данные готовы для анализа! 📊")
+    
+    os.remove(filename)
 
 async def main():
     init_db()
