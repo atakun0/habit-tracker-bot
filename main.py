@@ -64,6 +64,14 @@ async def command_start_handler(message: Message, state: FSMContext):
         reply_markup=main_kb
     )
 
+def make_progress_bar(current: int, target: int = 21) -> str:
+    percent = min(current / target, 1.0)
+    
+    filled_blocks = int(percent * 10)
+    empty_blocks = 10 - filled_blocks
+    
+    return "█" * filled_blocks + "░" * empty_blocks
+
 @dp.message(Command("help"))
 async def command_help_handler(message: Message):
     await message.answer("Мои команды:\n/start - Перезапуск\n/help - Справка")
@@ -162,11 +170,15 @@ async def show_statistics_handler(message: Message):
         await message.answer("У тебя пока нет отметок о выполнении привычек. Сделай хотя бы одну!")
         return
         
-    response = "📊 <b>Твоя статистика выполнений:</b>\n\n"
+    response = "📊 <b>Твоя статистика выполнений (цель: 21 день):</b>\n\n"
     for habit_name, count in stats:
         streak = get_habit_streak(user_id, habit_name)
-        streak_text = f" (🔥 {streak} дней подряд)" if streak > 1 else ""
-        response += f"🔹 <b>{habit_name}</b>: {count} раз(а){streak_text}\n"
+        streak_text = f" (🔥 {streak} подряд)" if streak > 1 else ""
+
+        progress_bar = make_progress_bar(count)
+        
+        response += f"🔹 <b>{habit_name}</b>: {count}/21\n"
+        response += f"<code>[{progress_bar}]</code>{streak_text}\n\n"
         
     await message.answer(response)
 
