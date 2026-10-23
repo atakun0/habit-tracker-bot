@@ -4,6 +4,9 @@ from aiogram.types import FSInputFile
 import asyncio
 import logging
 import random
+import matplotlib.pyplot as plt
+import os
+from aiogram.types import FSInputFile
 from dotenv import load_dotenv
 from middlewares import AntiSpamMiddleware
 from aiogram import Bot, Dispatcher, F
@@ -15,6 +18,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from aiogram.client.session.aiohttp import AiohttpSession
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
 
 from db import init_db, add_habit, get_habits, delete_habit, log_habit, get_habit_stats, check_habit_logged_today, get_habit_streak, get_all_users, rename_habit, get_all_logs
 from keyboards import main_kb, cancel_kb, habits_kb
@@ -160,6 +164,32 @@ async def add_habit_name(message: Message, state: FSMContext):
     
     await message.answer(f"Супер! Привычка «{habit_name}» успешно добавлена и сохранена в базу!", reply_markup=main_kb)
     await state.clear()
+
+@dp.message(StateFilter(None), F.text == "📈 График")
+async def send_chart_handler(message: Message):
+    user_id = message.from_user.id
+    stats = get_habit_stats(user_id)
+    
+    if not stats:
+        await message.answer("У тебя пока нет данных для построения графика.")
+        return
+        
+    habits = [s[0] for s in stats]
+    counts = [s[1] for s in stats]
+    
+    plt.figure(figsize=(8, 5))
+    plt.bar(habits, counts, color='#5c9ded')
+    plt.title('Прогресс выполнения привычек')
+    plt.ylabel('Количество дней')
+    
+    filename = f"chart_{user_id}.png"
+    plt.savefig(filename)
+    plt.close() 
+    
+    photo = FSInputFile(filename)
+    await message.answer_photo(photo, caption="Твои данные в виде графика! 📊")
+    
+    os.remove(filename)
 
 @dp.message(StateFilter(None), F.text == "📊 Статистика")
 async def show_statistics_handler(message: Message):
