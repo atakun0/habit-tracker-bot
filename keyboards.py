@@ -7,7 +7,7 @@ main_kb = ReplyKeyboardMarkup(
         [KeyboardButton(text="📋 Мои привычки"), KeyboardButton(text="📊 Статистика")],
         [KeyboardButton(text="❓ Помощь")],
         [KeyboardButton(text="✏️ Изменить")],
-        [KeyboardButton(text="📁 Экспорт данных"), KeyboardButton(text="❓ Помощь")]
+        [KeyboardButton(text="📈 График"), KeyboardButton(text="📁 Экспорт данных")],
     ],
     resize_keyboard=True
 )
