@@ -177,14 +177,28 @@ async def send_chart_handler(message: Message):
     habits = [s[0] for s in stats]
     counts = [s[1] for s in stats]
     
-    plt.figure(figsize=(8, 5))
-    plt.bar(habits, counts, color='#5c9ded')
-    plt.title('Прогресс выполнения привычек')
-    plt.ylabel('Количество дней')
+    habits = [s[0] for s in stats]
+    counts = [s[1] for s in stats]
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
+    
+    ax1.bar(habits, counts, color='#5c9ded')
+    ax1.set_title('Прогресс выполнения (в днях)')
+    ax1.set_ylabel('Количество дней')
+    ax1.tick_params(axis='x', rotation=45)
+    
+    if sum(counts) > 0:
+        ax2.pie(counts, labels=habits, autopct='%1.1f%%', startangle=90, colors=plt.cm.Paired.colors)
+        ax2.set_title('Доля привычек')
+    else:
+        ax2.text(0.5, 0.5, 'Пока нет выполнений', ha='center', va='center')
+        ax2.axis('off')
+    
+    plt.tight_layout()
     
     filename = f"chart_{user_id}.png"
     plt.savefig(filename)
-    plt.close() 
+    plt.close()
     
     photo = FSInputFile(filename)
     await message.answer_photo(photo, caption="Твои данные в виде графика! 📊")
