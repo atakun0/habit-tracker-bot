@@ -6,6 +6,7 @@ import logging
 import random
 import matplotlib.pyplot as plt
 import os
+import logging
 from aiogram.types import FSInputFile
 from dotenv import load_dotenv
 from middlewares import AntiSpamMiddleware
@@ -19,6 +20,16 @@ from aiogram.fsm.context import FSMContext
 from aiogram.client.session.aiohttp import AiohttpSession
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("bot.log", encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+
+logger = logging.getLogger(__name__)
 
 from db import init_db, add_habit, get_habits, delete_habit, log_habit, get_habit_stats, check_habit_logged_today, get_habit_streak, get_all_users, rename_habit, get_all_logs
 from keyboards import main_kb, cancel_kb, habits_kb
