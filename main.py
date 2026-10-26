@@ -14,7 +14,7 @@ from aiogram import Bot, Dispatcher, F
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart, Command, StateFilter
-from aiogram.types import Message, BotCommand
+from aiogram.types import Message, BotCommand, ErrorEvent
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from aiogram.client.session.aiohttp import AiohttpSession
@@ -378,6 +378,20 @@ async def export_data_handler(message: Message):
     await message.answer_document(document, caption="Твои данные готовы для анализа! 📊")
     
     os.remove(filename)
+
+@dp.error()
+async def global_error_handler(event: ErrorEvent):
+    logger.error(f"Произошла непредвиденная ошибка: {event.exception}", exc_info=True)
+    try:
+        if event.update.message:
+            await event.update.message.answer(
+                "Упс! Внутри бота что-то сломалось 🛠.\n"
+                "Разработчик уже получил запись в логах и скоро всё починит!"
+            )
+        elif event.update.callback_query:
+            await event.update.callback_query.message.answer("Произошла ошибка 🛠. Попробуйте позже.")
+    except Exception as e:
+        logger.error(f"Не удалось отправить сообщение об ошибке: {e}")
 
 async def main():
     init_db()
