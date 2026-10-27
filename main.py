@@ -79,6 +79,20 @@ async def command_start_handler(message: Message, state: FSMContext):
         reply_markup=main_kb
     )
 
+def get_streak_emoji(streak: int) -> str:
+    if streak == 0:
+        return "🧊"
+    elif streak < 3:
+        return "🌱"
+    elif streak < 7:
+        return "🌿"
+    elif streak < 14:
+        return "🔥"
+    elif streak < 21:
+        return "⚡️"
+    else:
+        return "👑"
+
 def make_progress_bar(current: int, target: int = 21) -> str:
     percent = min(current / target, 1.0)
     
@@ -228,8 +242,8 @@ async def show_statistics_handler(message: Message):
     response = "📊 <b>Твоя статистика выполнений (цель: 21 день):</b>\n\n"
     for habit_name, count in stats:
         streak = get_habit_streak(user_id, habit_name)
-        streak_text = f" (🔥 {streak} подряд)" if streak > 1 else ""
-
+        emoji = get_streak_emoji(streak)
+        streak_text = f" ({emoji} {streak} дней подряд)" if streak > 0 else " (🧊 нет активной серии)"
         progress_bar = make_progress_bar(count)
         
         response += f"🔹 <b>{habit_name}</b>: {count}/21\n"
