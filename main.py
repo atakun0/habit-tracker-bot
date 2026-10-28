@@ -269,6 +269,40 @@ async def show_habits_handler(message: Message):
         
     await message.answer(response)
 
+@dp.message(StateFilter(None), F.text == "📝 Итоги дня")
+async def daily_summary_handler(message: Message):
+    user_id = message.from_user.id
+    habits = get_habits(user_id)
+    
+    if not habits:
+        await message.answer("У тебя пока нет привычек. Самое время добавить первую!")
+        return
+        
+    done = []
+    pending = []
+    for h in habits:
+        if check_habit_logged_today(user_id, h):
+            done.append(h)
+        else:
+            pending.append(h)
+            
+    response = "📝 <b>Твои итоги на сегодня:</b>\n\n"
+    
+    if done:
+        response += "<b>✅ Выполнено:</b>\n"
+        for h in done:
+            response += f" — {h}\n"
+        response += "\n"
+        
+    if pending:
+        response += "<b>❌ Осталось сделать:</b>\n"
+        for h in pending:
+            response += f" — {h}\n"
+    else:
+        response += "🎉 <b>Все привычки на сегодня закрыты! Можно смело отдыхать.</b>"
+        
+    await message.answer(response)
+
 @dp.message(StateFilter(None), F.text == "🗑 Удалить привычку")
 async def delete_habit_start(message: Message, state: FSMContext):
     user_id = message.from_user.id
