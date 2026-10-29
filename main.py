@@ -101,6 +101,18 @@ def make_progress_bar(current: int, target: int = 21) -> str:
     
     return "█" * filled_blocks + "░" * empty_blocks
 
+@dp.message(Command("backup"))
+async def backup_database_handler(message: Message):
+    try:
+        db_file = FSInputFile("habits.db")
+        await message.answer_document(
+            db_file, 
+            caption="📦 Резервная копия базы данных.\nСырые данные готовы к аналитике!"
+        )
+    except Exception as e:
+        logger.error(f"Ошибка выгрузки бэкапа: {e}")
+        await message.answer("Не удалось сформировать бэкап.")
+
 @dp.message(Command("help"))
 async def command_help_handler(message: Message):
     await message.answer("Мои команды:\n/start - Перезапуск\n/help - Справка")
