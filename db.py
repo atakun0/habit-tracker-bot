@@ -160,3 +160,17 @@ def get_all_logs(user_id: int) -> list[tuple]:
     rows = cursor.fetchall()
     conn.close()
     return rows
+
+def undo_habit_log(user_id: int, habit_name: str):
+    conn = sqlite3.connect('habits.db')
+    cursor = conn.cursor()
+    cursor.execute('''
+        DELETE FROM habit_logs 
+        WHERE rowid = (
+            SELECT rowid FROM habit_logs 
+            WHERE user_id = ? AND habit_name = ?
+            ORDER BY date DESC LIMIT 1
+        )
+    ''', (user_id, habit_name))
+    conn.commit()
+    conn.close()

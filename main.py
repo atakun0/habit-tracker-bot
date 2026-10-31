@@ -14,11 +14,12 @@ from aiogram import Bot, Dispatcher, F
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart, Command, StateFilter
-from aiogram.types import Message, BotCommand, ErrorEvent
+from aiogram.types import Message, FSInputFile, ErrorEvent, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, BotCommand
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from aiogram.client.session.aiohttp import AiohttpSession
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -31,7 +32,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-from db import init_db, add_habit, get_habits, delete_habit, log_habit, get_habit_stats, check_habit_logged_today, get_habit_streak, get_all_users, rename_habit, get_all_logs
+from db import init_db, add_habit, get_habits, delete_habit, log_habit, get_habit_stats, check_habit_logged_today, get_habit_streak, get_all_users, rename_habit, get_all_logs, undo_habit_log
 from keyboards import main_kb, cancel_kb, habits_kb
 
 class LogHabit(StatesGroup):
@@ -396,9 +397,15 @@ async def log_habit_name(message: Message, state: FSMContext):
     ]
     motivation = random.choice(phrases)
     
+    undo_kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="↩️ Отменить", callback_data=f"undo_{habit_name}")]
+        ]
+    )
+    
     await message.answer(
         f"✅ Привычка «<b>{habit_name}</b>» выполнена!\n\n<i>{motivation}</i>", 
-        reply_markup=main_kb
+        reply_markup=undo_kb
     )
     await state.clear()
 
@@ -452,6 +459,14 @@ async def global_error_handler(event: ErrorEvent):
             await event.update.callback_query.message.answer("Произошла ошибка 🛠. Попробуйте позже.")
     except Exception as e:
         logger.error(f"Не удалось отправить сообщение об ошибке: {e}")
+
+@dp.callback_query(F.data.startswith("undo_"))
+async def undo_callback_handler(callback: CallbackQuery):
+    habit_name = callback.data.split("undo_")[1]
+    user_id = callback.from_user.id
+    undo_habit_log(user_id, habit_name)
+    await callback.message.edit_text(f"❌ Отметка для привычки «<b>{habit_name}</b>» отменена.")
+    await callback.answer("Действие отменено")
 
 async def main():
     init_db()
