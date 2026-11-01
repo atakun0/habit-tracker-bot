@@ -102,6 +102,15 @@ def make_progress_bar(current: int, target: int = 21) -> str:
     
     return "█" * filled_blocks + "░" * empty_blocks
 
+@dp.message(Command("admin"))
+async def admin_panel_handler(message: Message):
+    users = get_all_users()
+    
+    await message.answer(
+        f"🔧 <b>Панель администратора</b>\n\n"
+        f"👥 Всего пользователей в базе: <b>{len(users)}</b>"
+    )
+
 @dp.message(Command("backup"))
 async def backup_database_handler(message: Message):
     try:
