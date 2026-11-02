@@ -325,6 +325,37 @@ async def daily_summary_handler(message: Message):
         
     await message.answer(response)
 
+@dp.message(StateFilter(None), F.text == "🏆 Рекорды")
+async def records_handler(message: Message):
+    user_id = message.from_user.id
+    stats = get_habit_stats(user_id)
+    
+    if not stats:
+        await message.answer("У тебя пока нет данных для рекордов. Отметь хотя бы одну привычку!")
+        return
+        
+    most_completed = max(stats, key=lambda x: x[1])
+    
+    habits = get_habits(user_id)
+    best_streak_habit = None
+    max_streak = 0
+    
+    for h in habits:
+        streak = get_habit_streak(user_id, h)
+        if streak > max_streak:
+            max_streak = streak
+            best_streak_habit = h
+            
+    response = "🏆 <b>Твои рекорды:</b>\n\n"
+    response += f"🥇 <b>Самая частая:</b> «{most_completed[0]}» ({most_completed[1]} выполнений)\n"
+    
+    if max_streak > 0:
+        response += f"🔥 <b>Лучший стрик:</b> «{best_streak_habit}» ({max_streak} дней подряд)\n"
+    else:
+        response += "🧊 <b>Лучший стрик:</b> Пока нет активных серий. Самое время начать!"
+        
+    await message.answer(response)
+
 @dp.message(StateFilter(None), F.text == "🗑 Удалить привычку")
 async def delete_habit_start(message: Message, state: FSMContext):
     user_id = message.from_user.id

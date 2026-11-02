@@ -2,12 +2,12 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 main_kb = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text="✅ Отметить выполнение")],
-        [KeyboardButton(text="➕ Добавить привычку"), KeyboardButton(text="🗑 Удалить привычку")],
-        [KeyboardButton(text="📋 Мои привычки"), KeyboardButton(text="📝 Итоги дня")],
-        [KeyboardButton(text="❓ Помощь")],
-        [KeyboardButton(text="✏️ Изменить")],
-        [KeyboardButton(text="📈 График"), KeyboardButton(text="📁 Экспорт данных")],
+        [KeyboardButton(text="➕ Добавить привычку"), KeyboardButton(text="✅ Отметить выполнение")],
+        [KeyboardButton(text="📋 Мои привычки"), KeyboardButton(text="📊 Статистика")],
+        [KeyboardButton(text="🗑 Удалить привычку"), KeyboardButton(text="✏️ Изменить")],
+        [KeyboardButton(text="📁 Экспорт данных"), KeyboardButton(text="❓ Помощь")],
+        [KeyboardButton(text="📈 График")],
+        [KeyboardButton(text="📝 Итоги дня"), KeyboardButton(text="🏆 Рекорды")]
     ],
     resize_keyboard=True
 )
