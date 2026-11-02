@@ -409,6 +409,38 @@ async def log_habit_start(message: Message, state: FSMContext):
     )
     await state.set_state(LogHabit.waiting_for_habit_name)
 
+@dp.message(StateFilter(None), F.text == "👤 Мой профиль")
+async def user_profile_handler(message: Message):
+    user_id = message.from_user.id
+    
+    logs = get_all_logs(user_id)
+    total_logs = len(logs)
+    
+    level = int(total_logs ** 0.5)
+    
+    next_level_logs = (level + 1) ** 2
+    logs_needed = next_level_logs - total_logs
+    
+    if level == 0:
+        rank = "Новичок 🚶‍♂️"
+    elif level < 3:
+        rank = "Искатель 🔍"
+    elif level < 5:
+        rank = "Адепт рутины 🧘‍♂️"
+    elif level < 8:
+        rank = "Мастер привычек 🥷"
+    else:
+        rank = "Легенда 👑"
+        
+    response = (
+        f"👤 <b>Твой профиль:</b>\n\n"
+        f"📊 Всего выполнений: <b>{total_logs}</b>\n"
+        f"⭐ Уровень: <b>{level}</b> (<i>{rank}</i>)\n"
+        f"📈 До следующего уровня: осталось {logs_needed} выполнений"
+    )
+    
+    await message.answer(response)
+
 @dp.message(LogHabit.waiting_for_habit_name)
 async def log_habit_name(message: Message, state: FSMContext):
     habit_name = message.text
