@@ -1,4 +1,4 @@
-import csv
+import pandas as pd
 import os
 import asyncio
 import logging
@@ -438,16 +438,16 @@ async def export_data_handler(message: Message):
     if not logs:
         await message.answer("У тебя пока нет истории выполнений для экспорта. Отметь хотя бы одну привычку!")
         return
-        
-    filename = f"habits_export_{user_id}.csv"
-    with open(filename, mode='w', newline='', encoding='utf-8-sig') as file:
-        writer = csv.writer(file, delimiter=';')
-        writer.writerow(["Привычка", "Дата выполнения"]) 
-        for row in logs:
-            writer.writerow(row)
-            
+    df = pd.DataFrame(logs, columns=["Привычка", "Дата выполнения"])
+    df = df.sort_values(by=["Привычка", "Дата выполнения"], ascending=[True, False])
+    filename = f"habits_dataset_{user_id}.xlsx"
+    df.to_excel(filename, index=False, engine='openpyxl')
     document = FSInputFile(filename)
-    await message.answer_document(document, caption="Твои данные готовы для анализа! 📊")
+    await message.answer_document(
+        document, 
+        caption="Твой датасет готов! 📊\nСобран и отсортирован с помощью pandas."
+    )
+
     os.remove(filename)
 
 # ==========================================
