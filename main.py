@@ -142,6 +142,33 @@ async def cancel_handler(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("Действие отменено. Можешь продолжать работу с меню.", reply_markup=main_kb)
 
+@dp.message(Command("insights"))
+async def data_insights_handler(message: Message):
+    user_id = message.from_user.id
+    logs = get_all_logs(user_id)
+    if not logs:
+        await message.answer("У тебя пока нет истории выполнений для поиска инсайтов.")
+        return
+    df = pd.DataFrame(logs, columns=["Привычка", "Дата"])
+    df['Дата'] = pd.to_datetime(df['Дата'], errors='coerce')
+    df = df.dropna(subset=['Дата'])
+    df['День_недели'] = df['Дата'].dt.dayofweek
+    day_counts = df['День_недели'].value_counts()
+    best_day_index = day_counts.idxmax()
+    days_ru = {
+        0: 'Понедельник', 1: 'Вторник', 2: 'Среда', 
+        3: 'Четверг', 4: 'Пятница', 5: 'Суббота', 6: 'Воскресенье'
+    }
+    best_day = days_ru.get(best_day_index, "Неизвестно")
+    total_best_day = day_counts.max()
+    response = (
+        f"🧠 <b>Твои дата-инсайты (powered by pandas):</b>\n\n"
+        f"Твой самый продуктивный день недели — <b>{best_day}</b> "
+        f"({total_best_day} выполнений за всё время).\n\n"
+        f"<i>💡 Совет: планируй самые ресурсоемкие задачи, вроде математики, именно на этот день!</i>"
+    )   
+    await message.answer(response)
+
 @dp.message(Command("admin"))
 async def admin_panel_handler(message: Message):
     users = get_all_users()
