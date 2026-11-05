@@ -142,6 +142,51 @@ async def cancel_handler(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("Действие отменено. Можешь продолжать работу с меню.", reply_markup=main_kb)
 
+@dp.message(Command("trend"))
+async def productivity_trend_handler(message: Message):
+    user_id = message.from_user.id
+    logs = get_all_logs(user_id)
+    
+    if not logs:
+        await message.answer("Мало данных для анализа трендов. Продолжай отмечать привычки!")
+        return
+        
+    df = pd.DataFrame(logs, columns=["Привычка", "Дата"])
+    df['Дата'] = pd.to_datetime(df['Дата'], errors='coerce')
+    df = df.dropna(subset=['Дата'])
+    
+    now = pd.Timestamp.now()
+    this_week = df[(df['Дата'] >= now - pd.Timedelta(days=7)) & (df['Дата'] <= now)]
+    last_week = df[(df['Дата'] >= now - pd.Timedelta(days=14)) & (df['Дата'] < now - pd.Timedelta(days=7))]
+    
+    this_week_count = len(this_week)
+    last_week_count = len(last_week)
+    
+    if last_week_count == 0:
+        await message.answer(
+            f"📈 <b>Твоя продуктивность:</b>\n"
+            f"За последние 7 дней выполнено: <b>{this_week_count}</b>.\n"
+            f"<i>Данных за прошлую неделю пока нет для сравнения!</i>"
+        )
+        return
+        
+    diff = this_week_count - last_week_count
+    percent = (diff / last_week_count) * 100
+    
+    if diff > 0:
+        trend_text = f"🟢 Рост на {percent:.1f}% (+{diff} выполнений)"
+    elif diff < 0:
+        trend_text = f"🔴 Спад на {abs(percent):.1f}% ({diff} выполнений)"
+    else:
+        trend_text = "⚪️ Стабильность (без изменений)"
+        
+    await message.answer(
+        f"📈 <b>Твой тренд продуктивности (WoW):</b>\n\n"
+        f"Текущие 7 дней: <b>{this_week_count}</b>\n"
+        f"Прошлые 7 дней: <b>{last_week_count}</b>\n"
+        f"Динамика: {trend_text}"
+    )
+
 @dp.message(Command("insights"))
 async def data_insights_handler(message: Message):
     user_id = message.from_user.id
