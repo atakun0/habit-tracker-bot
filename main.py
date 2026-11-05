@@ -187,6 +187,40 @@ async def productivity_trend_handler(message: Message):
         f"Динамика: {trend_text}"
     )
 
+@dp.message(Command("winrate"))
+async def winrate_handler(message: Message):
+    user_id = message.from_user.id
+    logs = get_all_logs(user_id)
+    
+    if not logs:
+        await message.answer("Мало данных для расчета Win Rate. Сделай пару отметок!")
+        return
+        
+    df = pd.DataFrame(logs, columns=["Привычка", "Дата"])
+    df['Дата'] = pd.to_datetime(df['Дата'], errors='coerce')
+    df = df.dropna(subset=['Дата'])
+    
+    now = pd.Timestamp.now().normalize()
+    response = "🎯 <b>Твой Win Rate (Процент успеха):</b>\n\n"
+    
+    for habit, group in df.groupby("Привычка"):
+        first_date = group['Дата'].min().normalize()
+        total_days_since_start = (now - first_date).days + 1
+        completed_days = group['Дата'].nunique() 
+        win_rate = (completed_days / total_days_since_start) * 100
+        
+        if win_rate >= 80:
+            indicator = "🟢"
+        elif win_rate >= 50:
+            indicator = "🟡"
+        else:
+            indicator = "🔴"
+            
+        response += f"{indicator} <b>{habit}</b>: {win_rate:.1f}%\n"
+        response += f"└ <i>Выполнено {completed_days} из {total_days_since_start} дн.</i>\n\n"
+        
+    await message.answer(response)
+
 @dp.message(Command("insights"))
 async def data_insights_handler(message: Message):
     user_id = message.from_user.id
