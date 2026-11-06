@@ -187,6 +187,42 @@ async def productivity_trend_handler(message: Message):
         f"Динамика: {trend_text}"
     )
 
+@dp.message(Command("dist"))
+async def distribution_handler(message: Message):
+    user_id = message.from_user.id
+    logs = get_all_logs(user_id)
+    
+    if not logs:
+        await message.answer("Мало данных для расчета распределения.")
+        return
+        
+    df = pd.DataFrame(logs, columns=["Привычка", "Дата"])
+    df['Дата'] = pd.to_datetime(df['Дата'], errors='coerce')
+    df = df.dropna(subset=['Дата'])
+    
+    # Извлекаем день недели и считаем процентное распределение
+    df['День_недели'] = df['Дата'].dt.dayofweek
+    # normalize=True сразу выдает доли (от 0 до 1), умножаем на 100 для процентов
+    dist = df['День_недели'].value_counts(normalize=True) * 100
+    
+    days_ru = {
+        0: 'Пн', 1: 'Вт', 2: 'Ср', 
+        3: 'Чт', 4: 'Пт', 5: 'Сб', 6: 'Вс'
+    }
+    
+    response = "📊 <b>Нагрузка по дням недели:</b>\n\n"
+    
+    # Проходим по всем 7 дням, даже если в какие-то дни активности еще не было
+    for day_num in range(7):
+        percent = dist.get(day_num, 0.0)
+        # 1 блок = 10%
+        blocks = int(percent / 10)
+        bar = "█" * blocks + "░" * (10 - blocks)
+        
+        response += f"<b>{days_ru[day_num]}</b>: <code>[{bar}]</code> {percent:.1f}%\n"
+        
+    await message.answer(response)
+
 @dp.message(Command("winrate"))
 async def winrate_handler(message: Message):
     user_id = message.from_user.id
