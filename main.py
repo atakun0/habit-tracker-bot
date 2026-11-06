@@ -609,6 +609,18 @@ async def global_error_handler(event: ErrorEvent):
     except Exception as e:
         logger.error(f"Не удалось отправить сообщение об ошибке: {e}")
 
+async def set_default_commands(bot: Bot):
+    commands = [
+        BotCommand(command="start", description="Главное меню"),
+        BotCommand(command="help", description="Справка по боту"),
+        BotCommand(command="cancel", description="Отменить текущее действие"),
+        BotCommand(command="insights", description="Твой самый продуктивный день"),
+        BotCommand(command="trend", description="Тренд продуктивности (WoW)"),
+        BotCommand(command="winrate", description="Процент успеха привычек"),
+        BotCommand(command="dist", description="Распределение активности по дням")
+    ]
+    await bot.set_my_commands(commands)
+
 async def main():
     init_db()
     logger.info("Бот успешно запущен и готов к работе!")
