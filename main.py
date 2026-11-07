@@ -355,6 +355,52 @@ async def correlation_matrix_handler(message: Message):
         
     await message.answer(response)
 
+@dp.message(Command("growth"))
+async def growth_chart_handler(message: Message):
+    user_id = message.from_user.id
+    logs = get_all_logs(user_id)
+    
+    if not logs:
+        await message.answer("Пока нет данных для построения графика роста.")
+        return
+        
+    df = pd.DataFrame(logs, columns=["Привычка", "Дата"])
+    df['Дата'] = pd.to_datetime(df['Дата'], errors='coerce').dt.normalize()
+    df = df.dropna(subset=['Дата'])
+    
+    daily_counts = df.groupby('Дата').size().reset_index(name='Количество')
+    
+    daily_counts['Кумулятивно'] = daily_counts['Количество'].cumsum()
+    
+    plt.figure(figsize=(10, 5))
+    plt.plot(
+        daily_counts['Дата'], 
+        daily_counts['Кумулятивно'], 
+        marker='o', 
+        color='#2ecc71', 
+        linewidth=2, 
+        markersize=6
+    )
+    
+    plt.title('Кумулятивный рост выполненных привычек', fontsize=14)
+    plt.xlabel('Дата', fontsize=12)
+    plt.ylabel('Всего выполнений', fontsize=12)
+    plt.grid(True, linestyle='--', alpha=0.7)
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    
+    filename = f"growth_{user_id}.png"
+    plt.savefig(filename)
+    plt.close()
+    
+    photo = FSInputFile(filename)
+    await message.answer_photo(
+        photo, 
+        caption="📈 <b>Твой долгосрочный прогресс!</b>\nГрафик кумулятивного роста."
+    )
+    
+    os.remove(filename)
+
 # ==========================================
 # 5. ОСНОВНОЙ ФУНКЦИОНАЛ (CRUD ПРИВЫЧЕК И ОТМЕТКИ)
 # ==========================================
@@ -668,7 +714,8 @@ async def set_default_commands(bot: Bot):
         BotCommand(command="insights", description="Твой самый продуктивный день"),
         BotCommand(command="trend", description="Тренд продуктивности (WoW)"),
         BotCommand(command="winrate", description="Процент успеха привычек"),
-        BotCommand(command="dist", description="Распределение активности по дням")
+        BotCommand(command="dist", description="Распределение активности по дням"),
+        BotCommand(command="matrix", description="Синергия привычек")
     ]
     await bot.set_my_commands(commands)
 
