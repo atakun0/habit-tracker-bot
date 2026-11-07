@@ -304,6 +304,57 @@ async def backup_database_handler(message: Message):
         logger.error(f"Ошибка выгрузки бэкапа: {e}")
         await message.answer("Не удалось сформировать бэкап.")
 
+@dp.message(Command("matrix"))
+async def correlation_matrix_handler(message: Message):
+    user_id = message.from_user.id
+    logs = get_all_logs(user_id)
+    
+    if not logs:
+        await message.answer("Нет данных для анализа. Отметь хотя бы пару привычек!")
+        return
+        
+    df = pd.DataFrame(logs, columns=["Привычка", "Дата"])
+    df['Дата'] = pd.to_datetime(df['Дата'], errors='coerce').dt.normalize()
+    df = df.dropna(subset=['Дата'])
+    
+    df = df.drop_duplicates()
+    
+    df['Выполнено'] = 1
+    
+    pivot = df.pivot_table(index='Дата', columns='Привычка', values='Выполнено', fill_value=0)
+    
+    if len(pivot.columns) < 2:
+        await message.answer("Для поиска связей нужно вести хотя бы 2 разные привычки!")
+        return
+        
+    corr_matrix = pivot.corr()
+    
+    response = "🔗 <b>Связи между твоими привычками:</b>\n\n"
+    
+    pairs = []
+    cols = corr_matrix.columns
+    for i in range(len(cols)):
+        for j in range(i + 1, len(cols)):
+            habit1, habit2 = cols[i], cols[j]
+            corr_value = corr_matrix.iloc[i, j]
+            if pd.notna(corr_value):
+                pairs.append((habit1, habit2, corr_value))
+                
+    pairs.sort(key=lambda x: x[2], reverse=True)
+    
+    for h1, h2, corr in pairs:
+        if corr > 0.3:
+            icon = "🟢 Синергия"
+        elif corr < -0.3:
+            icon = "🔴 Конфликт"
+        else:
+            icon = "⚪️ Независимы"
+            
+        response += f"<b>{h1}</b> ↔️ <b>{h2}</b>\n"
+        response += f"└ {icon} (Корреляция: {corr:.2f})\n\n"
+        
+    await message.answer(response)
+
 # ==========================================
 # 5. ОСНОВНОЙ ФУНКЦИОНАЛ (CRUD ПРИВЫЧЕК И ОТМЕТКИ)
 # ==========================================
