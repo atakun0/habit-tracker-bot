@@ -401,6 +401,53 @@ async def growth_chart_handler(message: Message):
     
     os.remove(filename)
 
+@dp.message(Command("rolling"))
+async def rolling_average_handler(message: Message):
+    user_id = message.from_user.id
+    logs = get_all_logs(user_id)
+    
+    if not logs:
+        await message.answer("Пока нет данных для построения графика.")
+        return
+        
+    df = pd.DataFrame(logs, columns=["Привычка", "Дата"])
+    df['Дата'] = pd.to_datetime(df['Дата'], errors='coerce').dt.normalize()
+    df = df.dropna(subset=['Дата'])
+    
+    daily_counts = df.groupby('Дата').size()
+    
+    all_days = pd.date_range(start=daily_counts.index.min(), end=pd.Timestamp.now().normalize())
+    daily_counts = daily_counts.reindex(all_days, fill_value=0).reset_index()
+    daily_counts.columns = ['Дата', 'Количество']
+    
+    daily_counts['SMA_7'] = daily_counts['Количество'].rolling(window=7, min_periods=1).mean()
+    
+    plt.figure(figsize=(10, 5))
+    
+    plt.bar(daily_counts['Дата'], daily_counts['Количество'], color='#bdc3c7', alpha=0.6, label='Факт')
+    # Яркая линия сглаженного математического тренда
+    plt.plot(daily_counts['Дата'], daily_counts['SMA_7'], color='#e74c3c', linewidth=3, label='Тренд (SMA-7)')
+    
+    plt.title('Тренд продуктивности (Скользящая средняя за 7 дней)', fontsize=14)
+    plt.xlabel('Дата', fontsize=12)
+    plt.ylabel('Выполнено привычек', fontsize=12)
+    plt.legend()
+    plt.grid(True, linestyle='--', alpha=0.4)
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    
+    filename = f"rolling_{user_id}.png"
+    plt.savefig(filename)
+    plt.close()
+    
+    photo = FSInputFile(filename)
+    await message.answer_photo(
+        photo, 
+        caption="📉 <b>Твой сглаженный тренд!</b>\nКрасная линия показывает реальную динамику без учета дневных скачков."
+    )
+    
+    os.remove(filename)
+
 # ==========================================
 # 5. ОСНОВНОЙ ФУНКЦИОНАЛ (CRUD ПРИВЫЧЕК И ОТМЕТКИ)
 # ==========================================
