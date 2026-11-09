@@ -448,6 +448,57 @@ async def rolling_average_handler(message: Message):
     
     os.remove(filename)
 
+@dp.message(Command("audit"))
+async def habit_audit_handler(message: Message):
+    user_id = message.from_user.id
+    logs = get_all_logs(user_id)
+    habits = get_habits(user_id)
+    
+    if not habits:
+        await message.answer("У тебя пока нет привычек для аудита.")
+        return
+        
+    response = "🧹 <b>Аудит твоих привычек:</b>\n\n"
+    
+    if not logs:
+        response += "Ты еще ничего не отмечал. Все привычки ждут первого шага!"
+        await message.answer(response)
+        return
+        
+    df = pd.DataFrame(logs, columns=["Привычка", "Дата"])
+    df['Дата'] = pd.to_datetime(df['Дата'], errors='coerce').dt.normalize()
+    now = pd.Timestamp.now().normalize()
+    
+    last_logs = df.groupby('Привычка')['Дата'].max()
+    
+    zombies = []
+    active = []
+    
+    for h in habits:
+        if h in last_logs:
+            days_offline = (now - last_logs[h]).days
+            if days_offline > 7:
+                zombies.append((h, days_offline))
+            else:
+                active.append(h)
+        else:
+            zombies.append((h, "никогда"))
+            
+    if zombies:
+        response += "⚠️ <b>В зоне риска (без активности > 7 дней):</b>\n"
+        for h, days in zombies:
+            if days == "никогда":
+                response += f" — <b>{h}</b> (еще ни одной отметки)\n"
+            else:
+                response += f" — <b>{h}</b> (простой: {days} дн.)\n"
+        response += "\n<i>💡 Совет: удали неактуальные цели через «🗑 Удалить привычку», чтобы сфокусироваться на главном.</i>\n\n"
+    else:
+        response += "🌟 <b>Идеальная дисциплина!</b> У тебя нет заброшенных привычек.\n\n"
+        
+    response += f"✅ Активных привычек: <b>{len(active)}</b> из <b>{len(habits)}</b>"
+    
+    await message.answer(response)
+
 # ==========================================
 # 5. ОСНОВНОЙ ФУНКЦИОНАЛ (CRUD ПРИВЫЧЕК И ОТМЕТКИ)
 # ==========================================
