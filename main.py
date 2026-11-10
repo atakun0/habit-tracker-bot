@@ -4,6 +4,7 @@ import asyncio
 import logging
 import random
 import matplotlib.pyplot as plt
+import numpy as np
 
 from aiogram.types import Message, FSInputFile, ErrorEvent, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, BotCommand
 from aiogram import Bot, Dispatcher, F
@@ -498,6 +499,53 @@ async def habit_audit_handler(message: Message):
     response += f"✅ Активных привычек: <b>{len(active)}</b> из <b>{len(habits)}</b>"
     
     await message.answer(response)
+
+@dp.message(Command("balance"))
+async def balance_radar_handler(message: Message):
+    user_id = message.from_user.id
+    logs = get_all_logs(user_id)
+    
+    if not logs:
+        await message.answer("Пока нет данных для построения радара.")
+        return
+        
+    df = pd.DataFrame(logs, columns=["Привычка", "Дата"])
+    counts = df['Привычка'].value_counts()
+    
+    if len(counts) < 3:
+        await message.answer("Для построения радара баланса нужно вести минимум 3 разные привычки!")
+        return
+        
+    categories = counts.index.tolist()
+    values = counts.values.tolist()
+    
+    values += values[:1]
+    
+    angles = [n / float(len(categories)) * 2 * np.pi for n in range(len(categories))]
+    angles += angles[:1]
+    
+    fig, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(polar=True))
+    
+    ax.plot(angles, values, color='#8e44ad', linewidth=2, linestyle='solid')
+    ax.fill(angles, values, color='#8e44ad', alpha=0.3)
+    
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(categories, fontsize=12, fontweight='bold')
+    ax.set_yticks([]) 
+    
+    plt.title('Радар баланса привычек', size=16, y=1.1, fontweight='bold')
+    
+    filename = f"radar_{user_id}.png"
+    plt.savefig(filename, bbox_inches='tight')
+    plt.close()
+    
+    photo = FSInputFile(filename)
+    await message.answer_photo(
+        photo, 
+        caption="🕸 <b>Твой баланс привычек!</b>\nЧем ровнее фигура, тем гармоничнее твоя рутина."
+    )
+    
+    os.remove(filename)
 
 # ==========================================
 # 5. ОСНОВНОЙ ФУНКЦИОНАЛ (CRUD ПРИВЫЧЕК И ОТМЕТКИ)
