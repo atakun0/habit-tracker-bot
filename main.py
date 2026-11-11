@@ -899,11 +899,20 @@ async def set_default_commands(bot: Bot):
         BotCommand(command="start", description="Главное меню"),
         BotCommand(command="help", description="Справка по боту"),
         BotCommand(command="cancel", description="Отменить текущее действие"),
-        BotCommand(command="insights", description="Твой самый продуктивный день"),
+        
+        # Базовая аналитика
+        BotCommand(command="insights", description="Самый продуктивный день"),
         BotCommand(command="trend", description="Тренд продуктивности (WoW)"),
         BotCommand(command="winrate", description="Процент успеха привычек"),
-        BotCommand(command="dist", description="Распределение активности по дням"),
-        BotCommand(command="matrix", description="Синергия привычек")
+        BotCommand(command="dist", description="Распределение активности"),
+        
+        # Продвинутые графики и матрицы
+        BotCommand(command="matrix", description="Синергия привычек"),
+        BotCommand(command="growth", description="График кумулятивного роста"),
+        BotCommand(command="rolling", description="Сглаженный тренд (SMA)"),
+        BotCommand(command="audit", description="Аудит заброшенных привычек"),
+        BotCommand(command="balance", description="Радар баланса"),
+        BotCommand(command="heatmap", description="Карта активности (как в GitHub)")
     ]
     await bot.set_my_commands(commands)
 
