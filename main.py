@@ -547,6 +547,48 @@ async def balance_radar_handler(message: Message):
     
     os.remove(filename)
 
+@dp.message(Command("heatmap"))
+async def heatmap_handler(message: Message):
+    user_id = message.from_user.id
+    logs = get_all_logs(user_id)
+    
+    if not logs:
+        await message.answer("Пока нет данных для тепловой карты. Сделай пару отметок!")
+        return
+        
+    df = pd.DataFrame(logs, columns=["Привычка", "Дата"])
+    df['Дата'] = pd.to_datetime(df['Дата'], errors='coerce').dt.normalize()
+    df = df.dropna(subset=['Дата'])
+    
+    daily_counts = df.groupby('Дата').size()
+    
+    now = pd.Timestamp.now().normalize()
+    start_date = now - pd.Timedelta(days=27)
+    all_days = pd.date_range(start=start_date, end=now)
+    
+    heatmap_data = daily_counts.reindex(all_days, fill_value=0)
+    
+    response = "🗺 <b>Тепловая карта продуктивности (28 дней):</b>\n\n"
+    
+    chunks = [heatmap_data[i:i+7] for i in range(0, 28, 7)]
+    
+    for chunk in chunks:
+        row_str = ""
+        for val in chunk:
+            if val == 0:
+                row_str += "⬜️"
+            elif val == 1:
+                row_str += "🟨"
+            elif val == 2:
+                row_str += "🟧"
+            else:
+                row_str += "🟩"
+        response += row_str + "\n"
+        
+    response += "\n<i>Легенда: ⬜️ 0 | 🟨 1 | 🟧 2 | 🟩 3+ выполнений в день</i>"
+    
+    await message.answer(response)
+
 # ==========================================
 # 5. ОСНОВНОЙ ФУНКЦИОНАЛ (CRUD ПРИВЫЧЕК И ОТМЕТКИ)
 # ==========================================
