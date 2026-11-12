@@ -101,11 +101,17 @@ async def send_daily_reminders():
         habits = get_habits(user_id)
         if not habits:
             continue
+            
         pending = [h for h in habits if not check_habit_logged_today(user_id, h)]
+        
         if pending:
+            pending_list = "\n".join([f"🔸 {h}" for h in pending])
+            
             await bot.send_message(
                 user_id, 
-                "Эй! Ты еще не выполнил все свои привычки на сегодня. Самое время это исправить! 👇",
+                f"Вечернее сводка. До конца дня осталось выполнить:\n\n"
+                f"{pending_list}\n\n"
+                f"Не забудь отметить прогресс через меню.",
                 reply_markup=main_kb
             )
 
