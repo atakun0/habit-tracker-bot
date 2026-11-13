@@ -95,6 +95,26 @@ async def set_default_commands(bot: Bot):
     ]
     await bot.set_my_commands(commands)
 
+async def send_morning_greeting():
+    users = get_all_users()
+    for user_id in users:
+        habits = get_habits(user_id)
+        if not habits:
+            continue
+            
+        habit_list = "\n".join([f"🔹 {h}" for h in habits])
+        
+        try:
+            await bot.send_message(
+                user_id, 
+                f"🌅 Доброе утро! Твой план привычек на сегодня:\n\n"
+                f"{habit_list}\n\n"
+                f"Удачного дня на парах!",
+                reply_markup=main_kb
+            )
+        except Exception as e:
+            logger.error(f"Не удалось отправить утреннее сообщение пользователю {user_id}: {e}")
+
 async def send_daily_reminders():
     users = get_all_users()
     for user_id in users:
@@ -929,6 +949,13 @@ async def main():
     await set_default_commands(bot)
     
     scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
+    scheduler.add_job(send_daily_reminders, trigger='cron', hour=20, minute=0)
+    scheduler.start()
+
+    scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
+    # Утренний план на день (в 08:00)
+    scheduler.add_job(send_morning_greeting, trigger='cron', hour=8, minute=0)
+    # Вечернее напоминание (в 20:00)
     scheduler.add_job(send_daily_reminders, trigger='cron', hour=20, minute=0)
     scheduler.start()
     
