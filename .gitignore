@@ -4,3 +4,4 @@ venv/
 __pycache__/
 *.pyc
 bot.log
+bot_activity.log

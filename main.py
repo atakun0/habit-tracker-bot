@@ -18,6 +18,32 @@ from aiogram.client.session.aiohttp import AiohttpSession
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from dotenv import load_dotenv
 
+import logging
+from logging.handlers import RotatingFileHandler
+
+logging.getLogger().handlers.clear()
+
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(name)s - %(message)s')
+
+file_handler = RotatingFileHandler(
+    'bot_activity.log', 
+    maxBytes=5 * 1024 * 1024, 
+    backupCount=3, 
+    encoding='utf-8'
+)
+file_handler.setFormatter(formatter)
+file_handler.setLevel(logging.INFO)
+
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
+console_handler.setLevel(logging.INFO)
+
+# Применяем настройки глобально
+logging.basicConfig(level=logging.INFO, handlers=[file_handler, console_handler])
+logger = logging.getLogger(__name__)
+
+logger.info("Система логирования успешно инициализирована.")
+
 from middlewares import AntiSpamMiddleware
 from db import (
     init_db, add_habit, get_habits, delete_habit, log_habit, 
