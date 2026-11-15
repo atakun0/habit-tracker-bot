@@ -641,6 +641,52 @@ async def heatmap_handler(message: Message):
     
     await message.answer(response)
 
+@dp.message(Command("pie"))
+async def pie_chart_handler(message: Message):
+    user_id = message.from_user.id
+    logs = get_all_logs(user_id)
+    
+    if not logs:
+        await message.answer("Пока нет данных для построения графика.")
+        return
+        
+    df = pd.DataFrame(logs, columns=["Привычка", "Дата"])
+    counts = df['Привычка'].value_counts()
+    
+    if counts.empty:
+        await message.answer("Нет данных для отображения.")
+        return
+        
+    plt.figure(figsize=(8, 8))
+    
+    explode = [0.05] * len(counts)
+    
+    plt.pie(
+        counts.values, 
+        labels=counts.index, 
+        autopct='%1.1f%%', 
+        startangle=140, 
+        colors=plt.cm.Set3.colors,
+        explode=explode,
+        textprops={'fontsize': 12, 'fontweight': 'bold'}
+    )
+    
+    plt.title('Долевое распределение твоих усилий', fontsize=16, fontweight='bold', y=1.05)
+    plt.axis('equal') 
+    plt.tight_layout()
+    
+    filename = f"pie_{user_id}.png"
+    plt.savefig(filename, bbox_inches='tight')
+    plt.close()
+    
+    photo = FSInputFile(filename)
+    await message.answer_photo(
+        photo, 
+        caption="🍩 <b>Твоя круговая диаграмма!</b>\nНаглядно показывает, какие рутины забирают максимум твоего фокуса."
+    )
+    
+    os.remove(filename)
+
 # ==========================================
 # 5. ОСНОВНОЙ ФУНКЦИОНАЛ (CRUD ПРИВЫЧЕК И ОТМЕТКИ)
 # ==========================================
@@ -964,7 +1010,8 @@ async def set_default_commands(bot: Bot):
         BotCommand(command="rolling", description="Сглаженный тренд (SMA)"),
         BotCommand(command="audit", description="Аудит заброшенных привычек"),
         BotCommand(command="balance", description="Радар баланса"),
-        BotCommand(command="heatmap", description="Карта активности (как в GitHub)")
+        BotCommand(command="heatmap", description="Карта активности (как в GitHub)"),
+        BotCommand(command="pie", description="Доля каждой привычки (Pie Chart)")
     ]
     await bot.set_my_commands(commands)
 
