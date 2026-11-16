@@ -5,6 +5,7 @@ import logging
 import random
 import matplotlib.pyplot as plt
 import numpy as np
+import math
 
 from aiogram.types import Message, FSInputFile, ErrorEvent, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, BotCommand
 from aiogram import Bot, Dispatcher, F
@@ -599,6 +600,42 @@ async def balance_radar_handler(message: Message):
     
     os.remove(filename)
 
+@dp.message(Command("profile"))
+async def user_profile_handler(message: Message):
+    user_id = message.from_user.id
+    logs = get_all_logs(user_id)
+    habits = get_habits(user_id)
+    
+    total_completed = len(logs)
+    active_habits = len(habits) if habits else 0
+    
+    if total_completed == 0:
+        await message.answer("У тебя пока нет опыта. Отметь первую привычку, чтобы получить 1 уровень!")
+        return
+        
+    current_level = math.floor(math.sqrt(total_completed))
+    
+    level_start_xp = current_level ** 2
+    next_level_xp = (current_level + 1) ** 2
+    
+    xp_in_current_level = total_completed - level_start_xp
+    xp_needed_for_next = next_level_xp - level_start_xp
+    
+    percent = int((xp_in_current_level / xp_needed_for_next) * 10)
+    bar = "█" * percent + "░" * (10 - percent)
+    
+    tasks_left = next_level_xp - total_completed
+    
+    await message.answer(
+        f"👤 <b>Твой профиль:</b>\n\n"
+        f"🏆 <b>Уровень: {current_level}</b>\n"
+        f"Опыт: <code>[{bar}]</code> {xp_in_current_level}/{xp_needed_for_next}\n"
+        f"<i>(До {current_level + 1} уровня осталось {tasks_left} выполнений)</i>\n\n"
+        f"📊 <b>Сводка:</b>\n"
+        f"Всего выполнено задач: <b>{total_completed}</b>\n"
+        f"Активных привычек: <b>{active_habits}</b>"
+    )
+
 @dp.message(Command("heatmap"))
 async def heatmap_handler(message: Message):
     user_id = message.from_user.id
@@ -1011,7 +1048,8 @@ async def set_default_commands(bot: Bot):
         BotCommand(command="audit", description="Аудит заброшенных привычек"),
         BotCommand(command="balance", description="Радар баланса"),
         BotCommand(command="heatmap", description="Карта активности (как в GitHub)"),
-        BotCommand(command="pie", description="Доля каждой привычки (Pie Chart)")
+        BotCommand(command="pie", description="Доля каждой привычки (Pie Chart)"),
+        BotCommand(command="profile", description="Профиль и уровень")
     ]
     await bot.set_my_commands(commands)
 
