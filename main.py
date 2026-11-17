@@ -187,6 +187,27 @@ async def command_help_handler(message: Message):
     )
     await message.answer(help_text)
 
+@dp.message(Command("export"))
+async def export_excel_handler(message: Message):
+    user_id = message.from_user.id
+    logs = get_all_logs(user_id)
+    if not logs:
+        await message.answer("У тебя пока нет данных для экспорта.")
+        return
+    df = pd.DataFrame(logs, columns=["Привычка", "Дата"])
+    df['Дата'] = pd.to_datetime(df['Дата'], errors='coerce')
+    df = df.sort_values(by="Дата", ascending=False)
+    df['Дата'] = df['Дата'].dt.strftime('%Y-%m-%d %H:%M:%S')  
+    filename = f"habit_backup_{user_id}.xlsx"
+    df.to_excel(filename, index=False, engine='openpyxl')
+    
+    doc = FSInputFile(filename)
+    await message.answer_document(
+        doc,
+        caption="📁 <b>Твой датасет готов!</b>\nВсе логи выгружены в Excel. Можешь загрузить их в Jupyter Notebook для дальнейших экспериментов."
+    )
+    os.remove(filename)
+
 @dp.message(Command("cancel"))
 @dp.message(F.text.lower() == "отмена")
 async def cancel_handler(message: Message, state: FSMContext):
@@ -1049,7 +1070,8 @@ async def set_default_commands(bot: Bot):
         BotCommand(command="balance", description="Радар баланса"),
         BotCommand(command="heatmap", description="Карта активности (как в GitHub)"),
         BotCommand(command="pie", description="Доля каждой привычки (Pie Chart)"),
-        BotCommand(command="profile", description="Профиль и уровень")
+        BotCommand(command="profile", description="Профиль и уровень"),
+        BotCommand(command="export", description="Выгрузить данные в Excel")
     ]
     await bot.set_my_commands(commands)
 
