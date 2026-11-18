@@ -262,6 +262,53 @@ async def productivity_trend_handler(message: Message):
         f"Динамика: {trend_text}"
     )
 
+@dp.message(Command("streaks"))
+async def streaks_handler(message: Message):
+    user_id = message.from_user.id
+    logs = get_all_logs(user_id)
+    
+    if not logs:
+        await message.answer("Пока нет данных для расчета серий.")
+        return
+        
+    df = pd.DataFrame(logs, columns=["Привычка", "Дата"])
+    df['Дата'] = pd.to_datetime(df['Дата'], errors='coerce').dt.normalize()
+    df = df.dropna(subset=['Дата'])
+    df = df.drop_duplicates(subset=['Привычка', 'Дата'])
+    df = df.sort_values(by=['Привычка', 'Дата'])
+    df['Diff'] = df.groupby('Привычка')['Дата'].diff().dt.days
+    df['Streak_ID'] = (df['Diff'] != 1).cumsum()
+    
+    # Считаем длину каждого "острова"
+    streak_lengths = df.groupby(['Привычка', 'Streak_ID']).size().reset_index(name='Длина')
+    
+    # Находим абсолютные рекорды
+    max_streaks = streak_lengths.groupby('Привычка')['Длина'].max().to_dict()
+    
+    now = pd.Timestamp.now().normalize()
+    yesterday = now - pd.Timedelta(days=1)
+    last_dates = df.groupby('Привычка')['Дата'].max()
+    
+    response = "🔥 <b>Твои серии (дней подряд):</b>\n\n"
+    
+    for habit, max_len in max_streaks.items():
+        last_date = last_dates.get(habit)
+        if last_date >= yesterday:
+            current_streak_id = df[df['Привычка'] == habit]['Streak_ID'].iloc[-1]
+            current_len = streak_lengths[
+                (streak_lengths['Привычка'] == habit) & 
+                (streak_lengths['Streak_ID'] == current_streak_id)
+            ]['Длина'].values[0]
+        else:
+            current_len = 0
+        fire_emoji = "🔥" * min(current_len, 5) if current_len > 0 else "❄️"
+        
+        response += f"<b>{habit}</b> {fire_emoji}\n"
+        response += f"Текущая серия: <b>{current_len}</b> дн.\n"
+        response += f"Абсолютный рекорд: <b>{max_len}</b> дн.\n\n"
+        
+    await message.answer(response)
+
 @dp.message(Command("dist"))
 async def distribution_handler(message: Message):
     user_id = message.from_user.id
@@ -1071,7 +1118,8 @@ async def set_default_commands(bot: Bot):
         BotCommand(command="heatmap", description="Карта активности (как в GitHub)"),
         BotCommand(command="pie", description="Доля каждой привычки (Pie Chart)"),
         BotCommand(command="profile", description="Профиль и уровень"),
-        BotCommand(command="export", description="Выгрузить данные в Excel")
+        BotCommand(command="export", description="Выгрузить данные в Excel"),
+        BotCommand(command="streaks", description="Мои стрики и рекорды")
     ]
     await bot.set_my_commands(commands)
 
