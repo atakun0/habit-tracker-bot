@@ -1123,6 +1123,24 @@ async def set_default_commands(bot: Bot):
     ]
     await bot.set_my_commands(commands)
 
+@dp.error()
+async def global_error_handler(event: ErrorEvent):
+    logger.critical(
+        "Необработанное исключение при обработке апдейта %s: %s",
+        event.update.update_id,
+        event.exception,
+        exc_info=True
+    )
+    
+    if event.update.message:
+        await event.update.message.answer(
+            "⚠️ Произошла внутренняя ошибка при обработке команды. Детали записаны в лог."
+        )
+    elif event.update.callback_query:
+        await event.update.callback_query.answer(
+            "⚠️ Ошибка при обработке нажатия.", show_alert=True
+        )
+
 async def main():
     init_db()
     logger.info("Бот успешно запущен и готов к работе!")
