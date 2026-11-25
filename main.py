@@ -26,6 +26,7 @@ from aiogram.types import (
 )
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from dotenv import load_dotenv
+from utils import TARGET_DAYS, get_streak_emoji, make_progress_bar
 
 from db import (
     add_habit,
@@ -71,7 +72,6 @@ logger.info("Система логирования успешно инициал
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 PROXY_URL = os.getenv("PROXY_URL")
-TARGET_DAYS = 21  # Глобальная цель для формирования привычки
 
 session = AiohttpSession(proxy=PROXY_URL)
 bot = Bot(
@@ -120,27 +120,6 @@ def get_logs_df(user_id: int, normalize: bool = False) -> pd.DataFrame | None:
     if normalize:
         df["Дата"] = df["Дата"].dt.normalize()
     return df
-
-
-def get_streak_emoji(streak: int) -> str:
-    if streak == 0:
-        return "🧊"
-    elif streak < 3:
-        return "🌱"
-    elif streak < 7:
-        return "🌿"
-    elif streak < 14:
-        return "🔥"
-    elif streak < 21:
-        return "⚡️"
-    return "👑"
-
-
-def make_progress_bar(current: int, target: int = TARGET_DAYS) -> str:
-    percent = min(current / target, 1.0) if target > 0 else 0.0
-    filled_blocks = int(percent * 10)
-    return "█" * filled_blocks + "░" * (10 - filled_blocks)
-
 
 async def set_default_commands(bot: Bot):
     commands = [
