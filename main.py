@@ -73,7 +73,10 @@ load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
 PROXY_URL = os.getenv("PROXY_URL")
 
-session = AiohttpSession(proxy=PROXY_URL)
+if not TOKEN:
+    raise ValueError("Переменная окружения BOT_TOKEN не задана в .env")
+
+session = AiohttpSession(proxy=PROXY_URL) if PROXY_URL else None
 bot = Bot(
     token=TOKEN,
     session=session,
